@@ -585,7 +585,7 @@ export function EducationDashboard() {
           </nav>
         </div>
         <div className="mt-4 pt-4 border-t border-slate-200">
-          <p className="text-xs text-slate-500 text-center">Türkçe Eğitim Portalı v1.0</p>
+          <p className="text-xs text-slate-500 text-center">ELT Arena v1.0</p>
         </div>
       </aside>
 
