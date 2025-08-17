@@ -2,20 +2,15 @@ import { Pool, PoolClient } from 'pg'
 
 // Client-side'da PostgreSQL kullanımına karşı uyarı
 if (typeof window !== 'undefined') {
-  console.warn('⚠️ PostgreSQL client client-side\'da kullanılıyor! Bu performans sorunlarına yol açabilir.')
+  console.warn('⚠️ PostgreSQL client client-side\'da kullanılıyor!')
 }
 
-// PostgreSQL bağlantı havuzu
+// PostgreSQL bağlantı havuzu - DATABASE_URL kullan
 const pool = new Pool({
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: parseInt(process.env.DATABASE_PORT || '5432'),
-  database: process.env.DATABASE_NAME || 'elt_arena',
-  user: process.env.DATABASE_USER || 'postgres',
-  password: process.env.DATABASE_PASSWORD || 'password',
-  max: 20, // Maximum number of connections
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres123@localhost:5432/elt_arena',
+  max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
-  // UTF-8 encoding için
   client_encoding: 'utf8',
 })
 

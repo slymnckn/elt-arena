@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
-import { Pool } from 'pg'
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+import { query } from '@/lib/postgresql'
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Kullanıcının zaten var olup olmadığını kontrol et
     const existingUserQuery = 'SELECT id FROM admin_users WHERE username = $1'
-    const existingUserResult = await pool.query(existingUserQuery, [username])
+    const existingUserResult = await query(existingUserQuery, [username])
 
     if (existingUserResult.rows.length > 0) {
       return NextResponse.json({ 
@@ -69,7 +65,7 @@ export async function POST(req: NextRequest) {
       RETURNING id, username, full_name, is_active, created_at, updated_at
     `
     
-    const insertResult = await pool.query(insertQuery, [
+    const insertResult = await query(insertQuery, [
       username,
       hashedPassword,
       full_name || username, // full_name not null, so use username as fallback
