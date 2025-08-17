@@ -3,12 +3,13 @@ import { query } from '@/lib/postgresql'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const { type, title, content, icon, order_index } = body
-    const id = params.id
+    const resolvedParams = await params
+    const id = resolvedParams.id
 
     if (!type || !title || !content) {
       return NextResponse.json(
@@ -44,10 +45,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id
+    const resolvedParams = await params
+    const id = resolvedParams.id
 
     const result = await query(
       'DELETE FROM contact_info WHERE id = $1 RETURNING *',
