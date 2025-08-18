@@ -6,7 +6,7 @@ export async function GET() {
     console.log('🔍 Grades API: Starting request...')
     console.log('🔍 Environment check:', {
       NODE_ENV: process.env.NODE_ENV,
-      DATABASE_URL: process.env.DATABASE_URL ? '[SET]' : '[NOT SET]',
+      DATABASE_URL: process.env.DATABASE_URL || '[NOT SET]',
       DATABASE_HOST: process.env.DATABASE_HOST || '[NOT SET]'
     })
     const grades = await getGrades()
