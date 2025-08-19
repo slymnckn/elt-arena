@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
 // PUT /api/admin/users/[id] - Update user
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authorization header'ından token'ı al
     const authHeader = request.headers.get('authorization')
@@ -28,7 +28,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const data = await request.json()
-    const { id } = params
+    const resolvedParams = await params
+    const { id } = resolvedParams
 
     // Şifre varsa hash'le
     if (data.password) {
@@ -46,7 +47,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE /api/admin/users/[id] - Delete user
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Authorization header'ından token'ı al
     const authHeader = request.headers.get('authorization')
@@ -69,7 +70,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 })
     }
 
-    const { id } = params
+    const resolvedParams = await params
+    const { id } = resolvedParams
 
     // Admin kullanıcısının kendisini silmesini engelle
     if (decoded.userId?.toString() === id) {
