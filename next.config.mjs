@@ -21,6 +21,8 @@ const nextConfig = {
       },
     ],
     formats: ['image/webp', 'image/avif'],
+    domains: ['eltarena.com'],
+    unoptimized: false,
   },
   // Security headers
   async headers() {
