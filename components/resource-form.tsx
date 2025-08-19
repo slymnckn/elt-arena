@@ -111,13 +111,32 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
   const [activeTab, setActiveTab] = useState("manual") // Değişiklik burada: Varsayılan olarak 'manual'
 
   useEffect(() => {
+    console.log('🔍 ResourceForm useEffect:', { initialData, isOpen })
+    
     if (initialData) {
+      console.log('📝 Initial data fields:', {
+        title: initialData.title,
+        type: initialData.type,
+        description: initialData.description,
+        link: initialData.link,
+        previewLink: initialData.previewLink,
+        downloadLink: initialData.downloadLink,
+        fileUrl: initialData.fileUrl
+      })
+      
       setTitle(initialData.title)
       setType(initialData.type)
       setDescription(initialData.description || "")
-      setLink(initialData.link || "")
-      setPreviewLink(initialData.previewLink || "")
-      setDownloadLink(initialData.downloadLink || "")
+      // Düzenleme modunda: varolan linkleri uygun alanlara doldur
+      if (initialData.type === "book-presentation") {
+        setPreviewLink(initialData.previewLink || "")
+        setDownloadLink(initialData.downloadLink || "")
+        setLink("") // book-presentation'da link alanını boş bırak
+      } else {
+        setLink(initialData.link || "")
+        setPreviewLink("") // Diğer türlerde preview/download linklerini boş bırak
+        setDownloadLink("")
+      }
       setUploadedFiles([])
       setActiveTab("manual")
     } else {
@@ -181,16 +200,35 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
       }
     } else {
       // Manuel giriş sekmesinden gelen veriler
-      resourceData = {
-        title,
-        type,
-        description: description || undefined,
-        link: link || undefined,
-        previewLink: previewLink || undefined,
-        downloadLink: downloadLink || undefined,
+      if (type === "book-presentation") {
+        // Kitap sunumlarında önizleme ve indirme linkleri ayrı
+        resourceData = {
+          title,
+          type,
+          description: description || undefined,
+          previewLink: previewLink.trim() || undefined,
+          downloadLink: downloadLink.trim() || undefined,
+        }
+      } else {
+        // Diğer türlerde sadece link kullanılır
+        resourceData = {
+          title,
+          type,
+          description: description || undefined,
+          link: link.trim() || undefined,
+        }
       }
     }
 
+    console.log('📋 ResourceForm - Form state:', {
+      title,
+      type,
+      description,
+      link,
+      previewLink,
+      downloadLink,
+      activeTab
+    })
     console.log('📋 ResourceForm - Final data:', resourceData)
     onSubmit(resourceData)
   }
@@ -313,6 +351,9 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
                         placeholder="https://..."
                       />
                     </div>
+                    <p className="text-sm text-gray-500 col-start-2 col-span-3">
+                      Önizleme linki popup'ta açılır, indirme linki yeni sekmede açılır.
+                    </p>
                   </>
                 ) : (
                   <div className="grid grid-cols-4 items-center gap-4">

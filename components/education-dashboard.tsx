@@ -357,10 +357,17 @@ export function EducationDashboard() {
 
   useEffect(() => {
     if (!loading && grades.length > 0 && !selectedGradeId) {
-      // İlk sınıfı seç ve o kategorisini aç
-      const firstGrade = grades[0]
-      setSelectedGradeId(firstGrade.id)
-      setOpenCategories(new Set([firstGrade.category]))
+      // Ortaokul 8. sınıfı bul ve seç
+      const eighthGrade = grades.find(grade => grade.id === "8" && grade.category === "Ortaokul")
+      if (eighthGrade) {
+        setSelectedGradeId(eighthGrade.id)
+        setOpenCategories(new Set([eighthGrade.category]))
+      } else {
+        // Eğer 8. sınıf bulunamazsa ilk sınıfı seç (fallback)
+        const firstGrade = grades[0]
+        setSelectedGradeId(firstGrade.id)
+        setOpenCategories(new Set([firstGrade.category]))
+      }
     }
   }, [grades, loading, selectedGradeId])
 
@@ -623,23 +630,46 @@ export function EducationDashboard() {
                   <div className="flex flex-wrap gap-2">
                     {resource.type === "book-presentation" ? (
                       <>
-                        {resource.previewLink && (
-                          <Button onClick={() => setSelectedResource(resource)} className="flex-1">
-                            Önizleme
-                          </Button>
-                        )}
-                        {resource.downloadLink && (
-                          <Button
-                            variant="outline"
-                            onClick={() => window.open(resource.downloadLink, "_blank")}
-                            className="flex-1"
-                          >
-                            İndir
-                          </Button>
-                        )}
+                        {/* Her zaman önizleme butonu göster */}
+                        <Button 
+                          onClick={() => {
+                            if (resource.previewLink || resource.fileUrl) {
+                              setSelectedResource(resource)
+                            } else {
+                              alert('Bu kaynak için önizleme linki bulunmuyor.')
+                            }
+                          }} 
+                          className="flex-1"
+                        >
+                          Önizleme
+                        </Button>
+                        {/* Link varsa İndir butonu göster */}
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            const link = resource.downloadLink || resource.fileUrl || resource.previewLink
+                            if (link) {
+                              window.open(link, "_blank")
+                            } else {
+                              alert('Bu kaynak için indirme linki bulunmuyor.')
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          İndir
+                        </Button>
                       </>
                     ) : (
-                      <Button onClick={() => setSelectedResource(resource)} className="w-full">
+                      <Button 
+                        onClick={() => {
+                          if (resource.fileUrl || resource.previewLink) {
+                            setSelectedResource(resource)
+                          } else {
+                            alert('Bu kaynak için link bulunmuyor.')
+                          }
+                        }} 
+                        className="w-full"
+                      >
                         Aç
                       </Button>
                     )}

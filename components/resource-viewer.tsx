@@ -207,10 +207,11 @@ export function ResourceViewer({ resource, onClose }: ResourceViewerProps) {
       )
     }
 
-    // Sunumlar için önizleme linki varsa onu kullan
-    if (type === "book-presentation" && previewLink) {
+    // Sunumlar için önizleme linki veya fileUrl varsa onu kullan
+    if (type === "book-presentation" && (previewLink || fileUrl)) {
+      const linkToUse = previewLink || fileUrl
       return (
-        <iframe src={previewLink} title={resource.title} className="w-full h-full" frameBorder="0" allowFullScreen />
+        <iframe src={linkToUse} title={resource.title} className="w-full h-full" frameBorder="0" allowFullScreen />
       )
     }
 

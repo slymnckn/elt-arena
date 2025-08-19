@@ -49,6 +49,9 @@ export async function getGrades(): Promise<Grade[]> {
               title: resource.title,
               description: resource.description,
               type: resource.type as ResourceType,
+              link: resource.link,
+              previewLink: resource.preview_link,
+              downloadLink: resource.download_link,
               fileUrl: resource.file_url,
               createdBy: resource.creator_name || "Sistem",
               createdAt: resource.created_at,
@@ -94,6 +97,9 @@ export async function getResources(unitId?: number, resourceType?: ResourceType)
       title: resource.title,
       description: resource.description,
       type: resource.type as ResourceType,
+      link: resource.link,
+      previewLink: resource.preview_link,
+      downloadLink: resource.download_link,
       fileUrl: resource.file_url,
       createdBy: resource.creator_name || "Sistem",
       createdAt: resource.created_at,
@@ -158,11 +164,24 @@ export async function addResource(
     // UUID generate et
     const resourceId = crypto.randomUUID()
     
+    console.log("🔍 addResource data:", JSON.stringify(data, null, 2))
+    
     const result = await query(
-      `INSERT INTO resources (id, unit_id, title, description, type, file_url, created_by) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      `INSERT INTO resources (id, unit_id, title, description, type, link, preview_link, download_link, file_url, created_by) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
        RETURNING *`,
-      [resourceId, unitId, data.title, data.description, data.type, data.fileUrl, createdBy ? parseInt(createdBy) : null]
+      [
+        resourceId, 
+        unitId, 
+        data.title, 
+        data.description, 
+        data.type, 
+        data.link || null,
+        data.previewLink || null,
+        data.downloadLink || null,
+        data.fileUrl || null, 
+        createdBy ? parseInt(createdBy) : null
+      ]
     )
 
     if (result.rows.length > 0) {
@@ -172,6 +191,9 @@ export async function addResource(
         title: resource.title,
         description: resource.description,
         type: resource.type as ResourceType,
+        link: resource.link,
+        previewLink: resource.preview_link,
+        downloadLink: resource.download_link,
         fileUrl: resource.file_url,
         createdBy: resource.created_by || "Sistem",
         createdAt: resource.created_at,
@@ -191,10 +213,10 @@ export async function updateResource(
   try {
     const result = await query(
       `UPDATE resources 
-       SET title = $2, description = $3, type = $4, file_url = $5, updated_at = NOW() 
+       SET title = $2, description = $3, type = $4, link = $5, preview_link = $6, download_link = $7, file_url = $8, updated_at = NOW() 
        WHERE id = $1 
        RETURNING *`,
-      [id, data.title, data.description, data.type, data.fileUrl]
+      [id, data.title, data.description, data.type, data.link, data.previewLink, data.downloadLink, data.fileUrl]
     )
 
     if (result.rows.length > 0) {
@@ -204,6 +226,9 @@ export async function updateResource(
         title: resource.title,
         description: resource.description,
         type: resource.type as ResourceType,
+        link: resource.link,
+        previewLink: resource.preview_link,
+        downloadLink: resource.download_link,
         fileUrl: resource.file_url,
         createdBy: "Sistem",
         createdAt: resource.created_at,
@@ -318,5 +343,80 @@ export async function getAdminUsersForFilter(): Promise<{ id: string; username: 
   } catch (error) {
     console.error("Admin users getirme hatası:", error)
     return []
+  }
+}
+
+// Tüm admin kullanıcıları getir (yönetim için)
+export async function getAllAdminUsers(): Promise<any[]> {
+  try {
+    const result = await query(
+      "SELECT id, username, full_name, email, is_active, created_at, updated_at FROM admin_users ORDER BY created_at DESC"
+    )
+    return result.rows
+  } catch (error) {
+    console.error("Admin users listesi getirme hatası:", error)
+    return []
+  }
+}
+
+// Yeni admin kullanıcı ekle
+export async function addAdminUser(data: { username: string; password: string; email?: string; full_name?: string; is_active?: boolean }): Promise<any> {
+  try {
+    const result = await query(
+      `INSERT INTO admin_users (username, password_hash, email, full_name, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *`,
+      [data.username, data.password, data.email || null, data.full_name || data.username, data.is_active ?? true]
+    )
+    return result.rows[0]
+  } catch (error) {
+    console.error("Admin user ekleme hatası:", error)
+    throw error
+  }
+}
+
+// Admin kullanıcı güncelle
+export async function updateAdminUser(id: string, data: { username?: string; password_hash?: string; email?: string; full_name?: string; is_active?: boolean }): Promise<any> {
+  try {
+    const fields = []
+    const values = []
+    let idx = 1
+    
+    // updated_at'i her zaman ekle
+    const updateData = { ...data, updated_at: 'NOW()' }
+    
+    for (const key of Object.keys(updateData)) {
+      if (key === 'updated_at') {
+        fields.push(`${key} = NOW()`)
+      } else {
+        fields.push(`${key} = $${idx}`)
+        values.push((updateData as any)[key])
+        idx++
+      }
+    }
+    
+    if (fields.length === 0) throw new Error("No fields to update")
+    values.push(id)
+    
+    const result = await query(
+      `UPDATE admin_users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    )
+    return result.rows[0]
+  } catch (error) {
+    console.error("Admin user güncelleme hatası:", error)
+    throw error
+  }
+}
+
+// Admin kullanıcı sil
+export async function deleteAdminUser(id: string): Promise<any> {
+  try {
+    const result = await query(
+      `DELETE FROM admin_users WHERE id = $1 RETURNING *`,
+      [id]
+    )
+    return result.rows[0]
+  } catch (error) {
+    console.error("Admin user silme hatası:", error)
+    throw error
   }
 }

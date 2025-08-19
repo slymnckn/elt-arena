@@ -48,8 +48,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('🗑️ DELETE team member request received')
     const resolvedParams = await params
     const id = resolvedParams.id
+    console.log('🗑️ Deleting team member with ID:', id)
 
     const result = await query(
       'DELETE FROM team_members WHERE id = $1 RETURNING *',

@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { AdminDashboard as OriginalAdminDashboard } from "./admin-dashboard"
 import { AdminTeamMembers } from "./admin-team-members"
 import { AdminContactInfo } from "./admin-contact-info"
 import { AdminDocuments } from "./admin-documents"
 import { AdminAnnouncements } from "./admin-announcements"
+import AdminUsers from "./admin-users"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LogOut, RefreshCw, Home, UserPlus } from "lucide-react"
 
-type AdminSection = "resources" | "team" | "contact" | "documents" | "announcements"
+type AdminSection = "resources" | "users" | "team" | "contact" | "documents" | "announcements"
 
 export function AdminDashboardTabs() {
   const [activeTab, setActiveTab] = useState<AdminSection>("resources")
@@ -33,13 +34,22 @@ export function AdminDashboardTabs() {
     return false
   }, [])
 
+  // Admin olmayan kullanıcı users tab'ına erişmeye çalışırsa yönlendir
+  useEffect(() => {
+    if (!isAdmin && activeTab === "users") {
+      setActiveTab("resources")
+    }
+  }, [isAdmin, activeTab])
+
   const handleLogout = () => {
     localStorage.removeItem("admin_token")
     window.location.href = "/admin/login"
   }
 
   const handleAddUser = () => {
-    window.location.href = "/admin/add-user"
+    if (isAdmin) {
+      setActiveTab("users")
+    }
   }
 
   return (
@@ -70,7 +80,7 @@ export function AdminDashboardTabs() {
                     className="hover:bg-green-50 hover:text-green-700 hover:border-green-200 transition-colors"
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Kullanıcı Ekle
+                    Kullanıcılar
                   </Button>
                 )}
                 <Button 
@@ -97,7 +107,7 @@ export function AdminDashboardTabs() {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AdminSection)}>
           <div className="bg-white rounded-lg p-2 shadow-sm border mb-6">
-            <TabsList className="grid w-full grid-cols-5 bg-slate-50 h-12 rounded-lg p-1">
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} bg-slate-50 h-12 rounded-lg p-1`}>
               <TabsTrigger 
                 value="resources" 
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-white/50"
@@ -106,6 +116,16 @@ export function AdminDashboardTabs() {
                 <span className="hidden sm:inline">Materyaller</span>
                 <span className="sm:hidden">Materyal</span>
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger 
+                  value="users"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-white/50"
+                >
+                  <span className="text-base">👤</span>
+                  <span className="hidden sm:inline">Kullanıcılar</span>
+                  <span className="sm:hidden">Kullanıcı</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger 
                 value="announcements"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-md hover:bg-white/50"
@@ -148,6 +168,16 @@ export function AdminDashboardTabs() {
               </CardContent>
             </Card>
           </TabsContent>
+          
+          {isAdmin && (
+            <TabsContent value="users" className="mt-6">
+              <Card>
+                <CardContent className="p-6">
+                  <AdminUsers />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
           
           <TabsContent value="announcements" className="mt-6">
             <AdminAnnouncements />

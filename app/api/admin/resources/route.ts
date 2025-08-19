@@ -26,7 +26,12 @@ export async function POST(request: NextRequest) {
     
     console.log("📝 Resource ekleniyor:", { 
       unitId: parseInt(unitId), 
-      resourceData, 
+      resourceData: {
+        ...resourceData,
+        link: resourceData.link || null,
+        previewLink: resourceData.previewLink || null,
+        downloadLink: resourceData.downloadLink || null
+      }, 
       createdBy 
     })
     
