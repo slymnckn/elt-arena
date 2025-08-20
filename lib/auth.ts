@@ -72,7 +72,7 @@ export const authenticateUser = async (username: string, password: string): Prom
       throw new Error('Account is deactivated')
     }
 
-    const isValidPassword = await verifyPassword(password, user.password_hash)
+  const isValidPassword = await verifyPassword(password, user.password_hash.trim())
     if (!isValidPassword) {
       return null
     }

@@ -19,24 +19,44 @@ const hash = bcrypt.hashSync(newPassword, 12);
 console.log(`Generated hash for '${newPassword}': ${hash}`);
 
 const client = new Client({
-  host: process.env.PGHOST || '127.0.0.1',
-  port: process.env.PGPORT || 5433,
-  user: process.env.PGUSER || 'postgres',
-  password: process.env.PGPASSWORD || '',
-  database: process.env.PGDATABASE || 'elt_arena',
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres123@localhost:5432/elt_arena',
 });
 
 async function resetPassword() {
   try {
     await client.connect();
+    
+    // Önce kullanıcının mevcut hash'ini kontrol et
+    const userCheck = await client.query(
+      'SELECT password_hash FROM admin_users WHERE username = $1',
+      [username]
+    );
+    
+    if (userCheck.rows.length === 0) {
+      console.error(`User '${username}' not found.`);
+      return;
+    }
+    
+    console.log(`Current hash in DB: ${userCheck.rows[0].password_hash}`);
+    console.log(`Current hash trimmed: ${userCheck.rows[0].password_hash.trim()}`);
+    
+    // Hash'i trim'leyerek kaydet - auth.ts'te trim() kullanıyor
+    const trimmedHash = hash.trim();
+    
     const res = await client.query(
       'UPDATE admin_users SET password_hash = $1 WHERE username = $2',
-      [hash, username]
+      [trimmedHash, username]
     );
+    
     if (res.rowCount === 1) {
       console.log(`Password for user '${username}' updated successfully.`);
+      console.log(`New hash stored: ${trimmedHash}`);
+      
+      // Doğrulama testi yap
+      const testResult = bcrypt.compareSync(newPassword, trimmedHash);
+      console.log(`Hash verification test: ${testResult ? 'PASS' : 'FAIL'}`);
     } else {
-      console.error(`User '${username}' not found.`);
+      console.error(`Failed to update user '${username}'.`);
     }
   } catch (err) {
     console.error('Error updating password:', err);
