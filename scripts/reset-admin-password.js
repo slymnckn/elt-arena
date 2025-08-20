@@ -6,7 +6,6 @@ const bcrypt = require('bcryptjs');
 const { Client } = require('pg');
 
 console.log('Node version:', process.version);
-console.log('bcryptjs version:', require('bcryptjs/package.json').version);
 
 if (process.argv.length !== 4) {
   console.error('Usage: node scripts/reset-admin-password.js <username> <new_password>');
