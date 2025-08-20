@@ -22,6 +22,7 @@ interface FileUploadProps {
   maxFiles?: number
   acceptedTypes?: string[]
   className?: string
+  uploadType?: string
 }
 
 const getFileIcon = (type: string, fileName = "") => {
@@ -75,7 +76,7 @@ const formatFileSize = (bytes: number) => {
   return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
 }
 
-export function FileUpload({ onFilesUploaded, maxFiles = 5, acceptedTypes, className }: FileUploadProps) {
+export function FileUpload({ onFilesUploaded, maxFiles = 5, acceptedTypes, className, uploadType = "materials" }: FileUploadProps) {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
@@ -95,7 +96,7 @@ export function FileUpload({ onFilesUploaded, maxFiles = 5, acceptedTypes, class
       }
 
       // Gerçek yükleme
-      const result = await uploadFileViaApi(file)
+      const result = await uploadFileViaApi(file, uploadType || "materials")
 
       if (!result) {
         throw new Error("Dosya yüklenemedi. Sunucu hatası veya geçersiz yanıt.")

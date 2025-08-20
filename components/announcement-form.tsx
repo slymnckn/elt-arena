@@ -132,6 +132,7 @@ export function AnnouncementForm({
                   maxFiles={1}
                   acceptedTypes={["image/*"]} // Sadece resim dosyalarını kabul et
                   className="border-2 border-dashed border-purple-300 rounded-lg p-4 bg-purple-50"
+                  uploadType="announcements"
                 />
                 {imageUrl && (
                   <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">

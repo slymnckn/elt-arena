@@ -1,7 +1,8 @@
-export async function uploadFileViaApi(file: File): Promise<{ url: string; path: string } | null> {
+export async function uploadFileViaApi(file: File, type: string = "materials"): Promise<{ url: string; path: string } | null> {
   try {
     const body = new FormData()
     body.append("file", file)
+    body.append("type", type)
 
     const res = await fetch("/api/storage/upload", {
       method: "POST",
