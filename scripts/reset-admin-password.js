@@ -2,14 +2,7 @@
 // Usage: node scripts/reset-admin-password.js <username> <new_password>
 
 
-// bcryptjs kullan - Node.js v20 uyumlu import
-let bcrypt;
-try {
-  bcrypt = require('bcryptjs');
-} catch (e) {
-  console.error('bcryptjs not found, trying bcrypt...');
-  bcrypt = require('bcrypt');
-}
+const bcrypt = require('bcryptjs');
 const { Client } = require('pg');
 
 console.log('Node version:', process.version);
