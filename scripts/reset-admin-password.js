@@ -2,7 +2,8 @@
 // Usage: node scripts/reset-admin-password.js <username> <new_password>
 
 
-const bcrypt = require('bcryptjs');
+// bcryptjs yerine bcrypt kullan
+const bcrypt = require('bcrypt');
 const { Client } = require('pg');
 
 console.log('Node version:', process.version);
@@ -19,7 +20,7 @@ const hash = bcrypt.hashSync(newPassword, 12);
 console.log(`Generated hash for '${newPassword}': ${hash}`);
 
 const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres123@localhost:5432/elt_arena',
+  connectionString: process.env.DATABASE_URL || 'postgresql://elt_arena_user:eltarena123@localhost:5432/elt_arena',
 });
 
 async function resetPassword() {
