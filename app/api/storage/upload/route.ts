@@ -19,6 +19,8 @@ export async function POST(req: NextRequest) {
     // ----- 2. determine upload directory based on type -----
     const allowedTypes = ["materials", "announcements", "images", "documents", "videos", "audio"]
     const uploadType = allowedTypes.includes(type) ? type : "materials"
+    
+    console.log(`Upload Debug: type='${type}', uploadType='${uploadType}', allowedTypes=${allowedTypes.includes(type)}`)
 
     // ----- 3. create unique name & path -----
     const ext = file.name.split(".").pop() ?? ""
