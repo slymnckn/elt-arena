@@ -13,6 +13,8 @@ const username = process.argv[2];
 const newPassword = process.argv[3];
 const hash = bcrypt.hashSync(newPassword, 12);
 
+console.log(`Generated hash for '${newPassword}': ${hash}`);
+
 const client = new Client({
   host: process.env.PGHOST || '127.0.0.1',
   port: process.env.PGPORT || 5433,
