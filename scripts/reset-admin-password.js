@@ -19,7 +19,7 @@ const hash = bcrypt.hashSync(newPassword, 12);
 console.log(`Generated hash for '${newPassword}': ${hash}`);
 
 const client = new Client({
-  connectionString: process.env.DATABASE_URL || 'postgresql://elt_arena_user:eltarena123@localhost:5432/elt_arena',
+  connectionString: process.env.DATABASE_URL || 'postgresql://postgres@localhost:5432/postgres',
 });
 
 async function resetPassword() {
