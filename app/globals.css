@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HTML ve Body için temel yığınlama bağlamını tanımla */
+html,
+body {
+  position: relative; /* Yeni bir yığınlama bağlamı oluşturur */
+  z-index: 0; /* Diğer elementlerin üzerinde kalmasını sağlamak için düşük bir başlangıç z-index'i */
+}
+
+/* Zengin metin editöründen gelen içeriği güzelleştirmek için stiller */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  @apply font-semibold text-slate-800 mb-2 mt-4;
+}
+
+.prose h2 {
+  @apply text-xl border-b pb-2;
+}
+.prose h3 {
+  @apply text-lg;
+}
+
+.prose p {
+  @apply leading-relaxed mb-4;
+}
+
+.prose ul,
+.prose ol {
+  @apply list-inside list-disc pl-4 mb-4 space-y-1;
+}
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose li {
+  @apply ml-2;
+}
+
+.prose a {
+  @apply text-blue-600 hover:underline;
+}
+
+.prose strong {
+  @apply font-semibold;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-slate-300 pl-4 italic text-slate-600 my-4;
+}
+
+/* ReactQuill editörünün yüksekliğini ayarlamak için */
+.ql-container {
+  height: 100%;
+}
