@@ -25,7 +25,7 @@ export function resolveFileUrl(url: string): string {
   // uploads/ ile başlıyorsa - hem static hem de API endpoint desteği
   if (url.startsWith('uploads/')) {
     // Production modda veya Docker'da API endpoint kullan
-    if (process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true') {
+    if (process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true' || process.env.NEXT_PUBLIC_DOCKER_ENV === 'true') {
       return `${baseUrl}/api/storage/serve?file=${encodeURIComponent(url.replace('uploads/', ''))}`
     }
     // Development modda doğrudan static serving

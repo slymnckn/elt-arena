@@ -7,6 +7,7 @@ services:
     environment:
       - NODE_ENV=production
       - DOCKER_ENV=true
+      - NEXT_PUBLIC_DOCKER_ENV=true
       - DATABASE_URL=postgresql://elt_arena_user:eltarena123@db:5432/elt_arena_db
       - JWT_SECRET=cMFLCEnkivhktz3nkpAQW1EU7IsLwxHkN97w87
       - NEXTAUTH_URL=https://eltarena.com

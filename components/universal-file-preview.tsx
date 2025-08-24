@@ -20,6 +20,7 @@ import {
 import { WordViewer } from "./word-viewer"
 import { EnhancedPdfViewer } from "./enhanced-pdf-viewer"
 import type { Resource } from "@/lib/data"
+import { resolveFileUrl } from "@/lib/utils"
 
 interface UniversalFilePreviewProps {
   resource: Resource
@@ -30,7 +31,7 @@ type FileType = 'pdf' | 'word' | 'excel' | 'powerpoint' | 'image' | 'video' | 'a
 
 export function UniversalFilePreview({ resource, onClose }: UniversalFilePreviewProps) {
   const [previewMode, setPreviewMode] = useState<'native' | 'embed' | 'download'>('native')
-  const rawUrl = resource.previewLink || resource.link || resource.fileUrl || ''
+  const rawUrl = resolveFileUrl(resource.previewLink || resource.link || resource.fileUrl || '')
   
   // Google Drive linklerini embed formatına çevirme
   const convertGoogleDriveUrl = (url: string): string => {
