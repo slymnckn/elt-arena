@@ -14,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="tr" className="relative z-0">
+    <html lang="tr" className="relative z-0" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <link rel="icon" type="image/png" href="/favicon.png" />

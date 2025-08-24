@@ -11,17 +11,20 @@ import { DataProvider } from "@/context/data-context"
 import { BroosFooter } from "@/components/broos-footer"
 import { AnnouncementPopup } from "@/components/announcement-popup"
 import { Toaster } from "@/components/ui/toaster"
-import { usePathname } from "next/navigation" // usePathname import edildi
+import { usePathname } from "next/navigation"
 
 export default function ClientLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const pathname = usePathname() // Mevcut yolu al
+  const pathname = usePathname()
+  const [isClient, setIsClient] = React.useState(false)
 
   // ChunkLoadError recovery - sadece client-side
   React.useEffect(() => {
+    setIsClient(true)
+    
     if (typeof window !== "undefined") {
       const reloadOnChunkError = (err: any) => {
         const name = err?.reason?.name || err?.error?.name || err?.name || ""
@@ -42,15 +45,15 @@ export default function ClientLayout({
     }
   }, [])
 
-  // Admin paneli yollarını kontrol et
-  const isAdminRoute = pathname.startsWith("/admin")
+  // Admin paneli yollarını kontrol et - sadece client-side render edildikten sonra
+  const isAdminRoute = isClient ? pathname.startsWith("/admin") : false
 
   return (
     <div className="min-h-screen flex flex-col">
       <DataProvider>
         <main className="flex-1">{children}</main>
         <BroosFooter />
-        {!isAdminRoute && <AnnouncementPopup />}
+        {isClient && !isAdminRoute && <AnnouncementPopup />}
         <Toaster />
       </DataProvider>
     </div>

@@ -48,6 +48,7 @@ export async function getGrades(): Promise<Grade[]> {
               console.log('Resource mapping:', {
                 id: resource.id,
                 title: resource.title,
+                type: resource.type, // TYPE FIELD'INI EKLE
                 download_link: resource.download_link,
                 file_url: resource.file_url,
                 preview_link: resource.preview_link

@@ -15,7 +15,8 @@ import {
   Video,
   Music,
   File,
-  X
+  X,
+  Maximize
 } from "lucide-react"
 import { WordViewer } from "./word-viewer"
 import { EnhancedPdfViewer } from "./enhanced-pdf-viewer"
@@ -31,6 +32,7 @@ type FileType = 'pdf' | 'word' | 'excel' | 'powerpoint' | 'image' | 'video' | 'a
 
 export function UniversalFilePreview({ resource, onClose }: UniversalFilePreviewProps) {
   const [previewMode, setPreviewMode] = useState<'native' | 'embed' | 'download'>('native')
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const rawUrl = resolveFileUrl(resource.previewLink || resource.link || resource.fileUrl || '')
   
   // Google Drive linklerini embed formatına çevirme
@@ -80,10 +82,9 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
   const sourceUrl = convertYouTubeUrl(convertGoogleDocsUrl(convertGoogleDriveUrl(rawUrl)))
 
   // Dosya tipini belirleme - Google Drive ve diğer servisler için özel kontroller
-  const getFileType = (url: string): FileType => {
+  const getFileType = (url: string, originalUrl: string = ''): FileType => {
     // Google Drive dosyaları için özel kontrol
     if (url.includes('drive.google.com')) {
-      // Google Drive'dan dosya tipini tahmin etmek zor, genel olarak unknown dön
       return 'unknown'
     }
     
@@ -101,23 +102,60 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
       return 'unknown' // Harici servisler için iframe kullanılacak
     }
 
-    const extension = url.split('.').pop()?.toLowerCase() || ''
-    const fileName = url.split('/').pop()?.toLowerCase() || ''
+    // Dosya uzantısını bulmak için original URL'yi de kontrol et
+    const checkUrl = originalUrl || url
+    const extension = checkUrl.split('.').pop()?.toLowerCase() || ''
     
-    if (['pdf'].includes(extension)) return 'pdf'
-    if (['doc', 'docx'].includes(extension)) return 'word'
-    if (['xls', 'xlsx'].includes(extension)) return 'excel'  
-    if (['ppt', 'pptx'].includes(extension)) return 'powerpoint'
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(extension)) return 'image'
-    if (['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(extension)) return 'video'
-    if (['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(extension)) return 'audio'
-    if (['txt', 'md', 'json', 'xml', 'csv'].includes(extension)) return 'text'
+    // URL parametrelerini temizle (?file=uploads/... gibi)
+    let cleanUrl = checkUrl
+    if (checkUrl.includes('?file=')) {
+      cleanUrl = decodeURIComponent(checkUrl.split('?file=')[1] || '')
+    }
+    const cleanExtension = cleanUrl.split('.').pop()?.toLowerCase() || ''
+    
+    const finalExtension = cleanExtension || extension
+    
+    if (['pdf'].includes(finalExtension)) return 'pdf'
+    if (['doc', 'docx'].includes(finalExtension)) return 'word'
+    if (['xls', 'xlsx'].includes(finalExtension)) return 'excel'  
+    if (['ppt', 'pptx'].includes(finalExtension)) return 'powerpoint'
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(finalExtension)) return 'image'
+    if (['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(finalExtension)) return 'video'
+    if (['mp3', 'wav', 'ogg', 'm4a', 'flac'].includes(finalExtension)) return 'audio'
+    if (['txt', 'md', 'json', 'xml', 'csv'].includes(finalExtension)) return 'text'
     
     return 'unknown'
   }
 
-  const fileType = getFileType(sourceUrl)
+  const fileType = getFileType(sourceUrl, rawUrl)
   const fileName = rawUrl.split('/').pop() || 'Dosya'
+
+  // Tam ekran işlevi
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error('Tam ekran moduna geçilemedi:', err)
+      })
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen().catch(err => {
+        console.error('Tam ekran modundan çıkılamadı:', err)
+      })
+      setIsFullscreen(false)
+    }
+  }
+
+  // Tam ekran durumu değişikliklerini dinle
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
 
   // Dosya türü ikonu
   const getFileIcon = (type: FileType) => {
@@ -131,6 +169,21 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
       case 'audio': return <Music className="h-5 w-5 text-pink-600" />
       case 'text': return <File className="h-5 w-5 text-gray-600" />
       default: return <FileIcon className="h-5 w-5 text-gray-500" />
+    }
+  }
+
+  // Resource türüne göre ikon
+  const getResourceIcon = (resourceType: string) => {
+    switch (resourceType) {
+      case 'book-presentation': return <FileText className="h-5 w-5 text-blue-600" />
+      case 'game': return <Video className="h-5 w-5 text-green-600" />
+      case 'summary': return <File className="h-5 w-5 text-yellow-600" />
+      case 'quiz': return <FileIcon className="h-5 w-5 text-purple-600" />
+      case 'video': return <Video className="h-5 w-5 text-red-600" />
+      case 'worksheet': return <FileText className="h-5 w-5 text-gray-600" />
+      case 'flashcards': return <img src="/flashcard.png" alt="Flashcards" className="h-5 w-5" />
+      case 'file': return <FileIcon className="h-5 w-5 text-gray-500" />
+      default: return getFileIcon(fileType)
     }
   }
 
@@ -149,6 +202,21 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
     }
   }
 
+  // Resource türüne göre etiket
+  const getResourceTypeLabel = (resourceType: string) => {
+    switch (resourceType) {
+      case 'book-presentation': return 'Sunum'
+      case 'game': return 'Oyun'
+      case 'summary': return 'Özet'
+      case 'quiz': return 'Sınav'
+      case 'video': return 'Video'
+      case 'worksheet': return 'Çalışma Kağıdı'
+      case 'flashcards': return 'Flashcards & Speaking Cards'
+      case 'file': return 'Dosya'
+      default: return getFileTypeLabel(fileType)
+    }
+  }
+
   // Office dosyaları için Microsoft Online embed URL'i
   const getOfficeEmbedUrl = (url: string) => {
     return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`
@@ -161,6 +229,8 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
 
   // Native önizleme renderı
   const renderNativePreview = () => {
+    console.log('🔍 Debug Info - sourceUrl:', sourceUrl, 'fileType:', fileType, 'resource.type:', resource.type)
+    
     // Google Drive için özel durum - embed formatını koru
     if (sourceUrl.includes('drive.google.com')) {
       return (
@@ -178,24 +248,7 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
       )
     }
 
-    // TÜM DİĞER LİNKLER için embed önizleme - URL ile başlayan her şey
-    if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) {
-      return (
-        <Card className="h-full">
-          <CardContent className="p-0 h-full">
-            <iframe
-              src={sourceUrl}
-              className="w-full h-full min-h-[600px] border-0"
-              title={`${resource.title} - Web İçerik Önizlemesi`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </CardContent>
-        </Card>
-      )
-    }
-
-    // Dosya tipine göre native rendering (sadece yerel dosyalar için)
+    // Dosya tipine göre native rendering - ÖNCE BU KONTROL EDİLSİN
     switch (fileType) {
       case 'pdf':
         return (
@@ -232,15 +285,42 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
         )
 
       case 'video':
+        console.log('🎬 Video rendering - URL:', sourceUrl, 'fileType:', fileType)
+        
+        // YouTube embed URL'leri için iframe kullan
+        if (sourceUrl.includes('youtube.com/embed/')) {
+          return (
+            <Card className="h-full">
+              <CardContent className="p-0 h-full">
+                <iframe
+                  src={sourceUrl}
+                  className="w-full h-full min-h-[600px] border-0"
+                  title={`${resource.title} - YouTube Video`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </CardContent>
+            </Card>
+          )
+        }
+        
+        // Direkt video dosyaları (.mp4, .webm vs.) için video element
         return (
           <Card>
             <CardContent className="p-4">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">Video URL: {sourceUrl}</p>
+                <p className="text-sm text-gray-600">File Type: {fileType}</p>
+              </div>
               <video 
                 controls 
                 className="w-full h-auto max-h-96 rounded border"
                 preload="metadata"
+                onLoadStart={() => console.log('🎬 Video loading started')}
+                onError={(e) => console.log('❌ Video error:', e)}
+                onCanPlay={() => console.log('✅ Video can play')}
               >
-                <source src={sourceUrl} />
+                <source src={sourceUrl} type="video/mp4" />
                 Tarayıcınız video oynatmayı desteklemiyor.
               </video>
             </CardContent>
@@ -268,7 +348,43 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
       case 'text':
         return <TextFileViewer sourceUrl={sourceUrl} title={resource.title} />
 
+      case 'excel':
+      case 'powerpoint':
+        // Office dosyaları için fallback iframe
+        if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) {
+          return (
+            <Card className="h-full">
+              <CardContent className="p-0 h-full">
+                <iframe
+                  src={sourceUrl}
+                  className="w-full h-full min-h-[600px] border-0"
+                  title={`${resource.title} - Dosya Önizleme`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </CardContent>
+            </Card>
+          )
+        }
+        return renderUnsupportedFile()
+
       default:
+        // Diğer harici linkler için iframe
+        if (sourceUrl.startsWith('http://') || sourceUrl.startsWith('https://')) {
+          return (
+            <Card className="h-full">
+              <CardContent className="p-0 h-full">
+                <iframe
+                  src={sourceUrl}
+                  className="w-full h-full min-h-[600px] border-0"
+                  title={`${resource.title} - Web İçerik Önizlemesi`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </CardContent>
+            </Card>
+          )
+        }
         return renderUnsupportedFile()
     }
   }
@@ -435,59 +551,59 @@ export function UniversalFilePreview({ resource, onClose }: UniversalFilePreview
     <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="flex-shrink-0 bg-white border-b p-4 flex items-center justify-between">
-        {/* Sol taraf - Dosya bilgisi */}
-        <div className="flex items-center gap-3 flex-1">
-          {getFileIcon(fileType)}
-          <div>
-            <h2 className="text-lg font-semibold">{resource.title}</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary">
-                {getFileTypeLabel(fileType)}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {fileName}
-              </Badge>
-            </div>
-          </div>
+        {/* Sol taraf - Sadece kaynak başlığı */}
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold">{resource.title}</h2>
         </div>
         
-        {/* Orta - Broos Media Logo */}
-        <div className="flex-1 flex justify-center">
+        {/* Orta - ELT Arena Logo + powered by Broos Media */}
+        <div className="flex-1 flex justify-center items-center gap-3">
           <img 
-            src="/broos-media.png" 
-            alt="Broos Media" 
-            className="h-8 w-auto"
+            src="/elt-arena-logo.png" 
+            alt="ELT Arena" 
+            className="h-10 w-auto"
           />
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">powered by</span>
+            <img 
+              src="/broos-media.png" 
+              alt="Broos Media" 
+              className="h-5 w-auto"
+            />
+          </div>
         </div>
 
         {/* Sağ taraf - Aksiyon butonları */}
         <div className="flex items-center gap-2 flex-1 justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => window.open(rawUrl, '_blank')}
-            title="Yeni sekmede aç"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Yeni Sekmede Aç
-          </Button>
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const link = document.createElement('a')
-              link.href = rawUrl
-              link.download = fileName
-              document.body.appendChild(link)
-              link.click()
-              document.body.removeChild(link)
-            }}
-            title="İndir"
-          >
-            <Download className="h-4 w-4" />
-            İndir
-          </Button>
+          {/* Oyun, Video, Sunum ve Flashcards türlerinde tam ekran butonu, diğerlerinde indir butonu */}
+          {(resource.type === 'game' || resource.type === 'video' || resource.type === 'book-presentation' || resource.type === 'flashcards') ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? "Tam ekrandan çık" : "Tam ekran"}
+            >
+              <Maximize className="h-4 w-4" />
+              {isFullscreen ? "Çık" : "Tam Ekran"}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const link = document.createElement('a')
+                link.href = rawUrl
+                link.download = fileName
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              }}
+              title="İndir"
+            >
+              <Download className="h-4 w-4" />
+              İndir
+            </Button>
+          )}
 
           {onClose && (
             <Button size="sm" variant="outline" onClick={onClose}>

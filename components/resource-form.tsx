@@ -322,6 +322,12 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
                         <SelectItem value="quiz">📝 Testler / Quizler</SelectItem>
                         <SelectItem value="worksheet">📋 Çalışma Kağıtları</SelectItem>
                         <SelectItem value="video">🎥 Videolar</SelectItem>
+                        <SelectItem value="flashcards">
+                          <div className="flex items-center">
+                            <img src="/flashcard.png" alt="Flashcards" className="w-4 h-4 mr-2" />
+                            Flashcards & Speaking Cards
+                          </div>
+                        </SelectItem>
                         <SelectItem value="file">📁 Dosyalar</SelectItem>
                       </CustomSelectContent>
                     </Select>
@@ -468,6 +474,12 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
                               <SelectItem value="quiz">📝 Testler / Quizler</SelectItem>
                               <SelectItem value="worksheet">📋 Çalışma Kağıtları</SelectItem>
                               <SelectItem value="video">🎥 Videolar</SelectItem>
+                              <SelectItem value="flashcards">
+                                <div className="flex items-center">
+                                  <img src="/flashcard.png" alt="Flashcards" className="w-4 h-4 mr-2" />
+                                  Flashcards & Speaking Cards
+                                </div>
+                              </SelectItem>
                               <SelectItem value="file">📁 Dosyalar</SelectItem>
                             </CustomSelectContent>
                           </Select>

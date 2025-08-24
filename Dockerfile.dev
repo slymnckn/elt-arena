@@ -1,0 +1,19 @@
+FROM node:20-alpine
+WORKDIR /app
+
+# pnpm'i aktive et
+RUN corepack enable
+
+# Sadece paket dosyalarını kopyala ve kur
+COPY package.json pnpm-lock.yaml ./
+RUN --mount=type=cache,target=/root/.pnpm-store pnpm install
+
+# Kod ilk defa kopyalansın (watch sonrası sync ile güncellenecek)
+COPY . .
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+ENV NODE_ENV=development
+
+CMD ["pnpm", "dev"]

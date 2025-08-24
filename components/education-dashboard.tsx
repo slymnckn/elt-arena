@@ -45,6 +45,7 @@ const resourceIcons = {
   quiz: <PencilRuler className="h-6 w-6 mr-3 text-orange-500" />,
   video: <Video className="h-6 w-6 mr-3 text-red-500" />,
   worksheet: <BookOpenCheck className="h-6 w-6 mr-3 text-indigo-500" />,
+  flashcards: <img src="/flashcard.png" alt="Flashcards" className="h-6 w-6 mr-3" />,
   file: <FileText className="h-6 w-6 mr-3 text-gray-500" />,
 }
 
@@ -55,6 +56,7 @@ const resourceTypeNames = {
   quiz: "Testler / Quizler",
   video: "Videolar",
   worksheet: "Çalışma Kağıtları",
+  flashcards: "Flashcards & Speaking Cards",
   file: "Dosyalar",
 }
 
@@ -575,27 +577,59 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
 
   // Seçili ünitedeki kaynak türlerini grupla
   const resourceTypeGroups = useMemo(() => {
-    if (!selectedUnit) return {}
+    try {
+      if (!selectedUnit) return {}
 
-    const groups: Record<ResourceType, Resource[]> = {
-      'book-presentation': [],
-      game: [],
-      summary: [],
-      quiz: [],
-      video: [],
-      worksheet: [],
-      file: [],
+      const groups: Record<ResourceType, Resource[]> = {
+        'book-presentation': [],
+        game: [],
+        summary: [],
+        quiz: [],
+        video: [],
+        worksheet: [],
+        file: [],
+        flashcards: [],
+      }
+
+      // selectedUnit.resources'ın var olduğunu ve dizi olduğunu kontrol et
+      if (!selectedUnit.resources || !Array.isArray(selectedUnit.resources)) {
+        console.warn('selectedUnit.resources mevcut değil veya dizi değil:', selectedUnit)
+        return {}
+      }
+
+      selectedUnit.resources.forEach((resource: Resource) => {
+        try {
+          // Resource ve type alanının geçerli olduğunu kontrol et
+          if (!resource || typeof resource !== 'object') {
+            console.warn('Geçersiz resource object:', resource)
+            return
+          }
+          
+          if (!resource.type) {
+            console.warn('Resource type eksik:', resource)
+            return
+          }
+
+          if (!groups.hasOwnProperty(resource.type)) {
+            console.warn('Bilinmeyen resource type:', resource.type, 'Resource:', resource)
+            return
+          }
+
+          groups[resource.type].push(resource)
+        } catch (resourceError) {
+          console.error('Resource işleme hatası:', resourceError, 'Resource:', resource)
+        }
+      })
+
+      // Boş olmayan grupları döndür
+      return Object.fromEntries(Object.entries(groups).filter(([, resources]) => resources.length > 0)) as Record<
+        ResourceType,
+        Resource[]
+      >
+    } catch (error) {
+      console.error('resourceTypeGroups useMemo hatası:', error)
+      return {}
     }
-
-    selectedUnit.resources.forEach((resource) => {
-      groups[resource.type].push(resource)
-    })
-
-    // Boş olmayan grupları döndür
-    return Object.fromEntries(Object.entries(groups).filter(([, resources]) => resources.length > 0)) as Record<
-      ResourceType,
-      Resource[]
-    >
   }, [selectedUnit])
 
   const handleBackToGrade = () => {

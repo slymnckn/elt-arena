@@ -79,6 +79,33 @@ export function EnhancedPdfViewer({ sourceUrl, title, onClose }: EnhancedPdfView
   const zoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5))
   const resetZoom = () => setScale(1.2)
 
+  // Tam ekran kontrolları
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.error('Tam ekran moduna geçilemedi:', err)
+      })
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen().catch(err => {
+        console.error('Tam ekran modundan çıkılamadı:', err)
+      })
+      setIsFullscreen(false)
+    }
+  }
+
+  // Tam ekran durumu değişikliklerini dinle
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+
   // ESC tuşu ile çıkış
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -106,11 +133,16 @@ export function EnhancedPdfViewer({ sourceUrl, title, onClose }: EnhancedPdfView
       // Ok tuşları ile sayfa gezinme
       if (e.key === 'ArrowLeft') goToPrevPage()
       if (e.key === 'ArrowRight') goToNextPage()
+      // F11 tuşu ile tam ekran
+      if (e.key === 'F11') {
+        e.preventDefault()
+        toggleFullscreen()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, numPages])
+  }, [onClose, numPages, isFullscreen])
 
   // Hata durumu
   if (error) {
@@ -160,7 +192,7 @@ export function EnhancedPdfViewer({ sourceUrl, title, onClose }: EnhancedPdfView
         <CardContent className="p-8">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-            <p className="text-sm text-gray-600">PDF kütüphanesi yükleniyor...</p>
+            <p className="text-sm text-gray-600">PDF kütüphanesi yükleniyor... 🚀</p>
           </div>
         </CardContent>
       </Card>
@@ -221,6 +253,14 @@ export function EnhancedPdfViewer({ sourceUrl, title, onClose }: EnhancedPdfView
           </Button>
           <Button size="sm" variant="outline" onClick={resetZoom}>
             <RotateCw className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Tam ekrandan çık (F11)" : "Tam ekran (F11)"}
+          >
+            <Maximize className="h-4 w-4" />
           </Button>
         </div>
 
@@ -291,7 +331,8 @@ export function EnhancedPdfViewer({ sourceUrl, title, onClose }: EnhancedPdfView
         <span>Kısayollar: </span>
         <span className="mr-4">← → Sayfa geçişi</span>
         <span className="mr-4">Ctrl/Cmd + +/- Zoom</span>
-        <span>Ctrl/Cmd + 0 Zoom sıfırla</span>
+        <span className="mr-4">Ctrl/Cmd + 0 Zoom sıfırla</span>
+        <span>F11 Tam ekran</span>
       </div>
     </div>
   )

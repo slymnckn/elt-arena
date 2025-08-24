@@ -1,4 +1,4 @@
-export type ResourceType = "book-presentation" | "game" | "summary" | "quiz" | "video" | "worksheet" | "file"
+export type ResourceType = "book-presentation" | "game" | "summary" | "quiz" | "video" | "worksheet" | "file" | "flashcards"
 
 export type GameCategory = "Fortune Match" | "Tower Game" | "Wordwall" | "Baamboozle" | "Words of Wisdom" | "Kahoot!"
 
@@ -60,6 +60,11 @@ const resourceTemplates: Omit<Resource, "id" | "link" | "previewLink" | "downloa
     type: "worksheet",
     description: "Ünitedeki önemli kelimelerin öğrenilmesi için hazırlanmış çalışma",
   },
+  {
+    title: "Flashcards & Speaking Cards",
+    type: "flashcards",
+    description: "Kelimeleri ve konuşma becerilerini geliştiren etkileşimli kartlar",
+  },
 ]
 
 // Örnek materyal linkleri
@@ -74,6 +79,7 @@ const sampleLinks = {
   quiz: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   worksheet: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+  flashcards: "https://quizlet.com/tr/subject/turkish/",
   file: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
 }
 

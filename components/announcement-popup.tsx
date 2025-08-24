@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import type { Announcement } from "@/lib/database"
-import Image from "next/image"
 import { resolveFileUrl } from "@/lib/utils"
 
 // Benzersiz kullanıcı ID'si oluştur veya mevcut olanı al
@@ -158,11 +157,9 @@ export function AnnouncementPopup() {
         {/* Sadece görsel göster */}
         {announcement.image_url && (
           <div className="w-full">
-            <Image
+            <img
               src={resolveFileUrl(announcement.image_url)}
               alt="Duyuru Görseli"
-              width={800}
-              height={600}
               className="rounded-md object-contain w-full h-auto max-h-[600px]"
             />
           </div>

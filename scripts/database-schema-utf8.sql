@@ -253,7 +253,7 @@ CREATE TABLE public.resources (
     created_by integer,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    CONSTRAINT resources_type_check CHECK ((type = ANY (ARRAY['book-presentation'::text, 'game'::text, 'summary'::text, 'quiz'::text, 'video'::text, 'worksheet'::text, 'file'::text]))),
+    CONSTRAINT resources_type_check CHECK ((type = ANY (ARRAY['book-presentation'::text, 'game'::text, 'summary'::text, 'quiz'::text, 'video'::text, 'worksheet'::text, 'file'::text, 'flashcards'::text]))),
     CONSTRAINT resources_game_category_check CHECK (((type <> 'game'::text) OR ((type = 'game'::text) AND (category IS NOT NULL) AND (category = ANY (ARRAY['Fortune Match'::character varying, 'Tower Game'::character varying, 'Wordwall'::character varying, 'Baamboozle'::character varying, 'Words of Wisdom'::character varying, 'Kahoot!'::character varying])))))
 );
 

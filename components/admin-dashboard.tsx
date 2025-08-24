@@ -290,6 +290,7 @@ export function AdminDashboard() {
       quiz: "Testler / Quizler",
       video: "Videolar",
       worksheet: "Çalışma Kağıtları",
+      flashcards: "Flashcards & Speaking Cards",
       file: "Dosyalar",
     }
     return labels[type as keyof typeof labels] || type
@@ -303,6 +304,7 @@ export function AdminDashboard() {
       quiz: "bg-orange-100 text-orange-800",
       video: "bg-red-100 text-red-800",
       worksheet: "bg-indigo-100 text-indigo-800",
+      flashcards: "bg-pink-100 text-pink-800",
       file: "bg-gray-100 text-gray-800",
     }
     return colors[type as keyof typeof colors] || "bg-gray-100 text-gray-800"
@@ -446,6 +448,12 @@ export function AdminDashboard() {
                         <SelectItem value="quiz">Testler / Quizler</SelectItem>
                         <SelectItem value="video">Videolar</SelectItem>
                         <SelectItem value="worksheet">Çalışma Kağıtları</SelectItem>
+                        <SelectItem value="flashcards">
+                          <div className="flex items-center">
+                            <img src="/flashcard.png" alt="Flashcards" className="w-4 h-4 mr-2" />
+                            Flashcards & Speaking Cards
+                          </div>
+                        </SelectItem>
                         <SelectItem value="file">Dosyalar</SelectItem>
                       </SelectContent>
                     </Select>
