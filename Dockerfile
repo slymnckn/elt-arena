@@ -34,6 +34,9 @@ RUN adduser --system --uid 1001 nextjs
 # Public klasörü
 COPY --from=builder /app/public ./public
 
+# Uploads klasörünü oluştur ve doğru izinleri ayarla
+RUN mkdir -p ./public/uploads/materials && chown -R nextjs:nodejs ./public/uploads
+
 # Build output'ları kopyala
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

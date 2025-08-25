@@ -40,6 +40,15 @@ const nextConfig = {
       },
     ]
   },
+  // Static files için rewrites
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: '/api/storage/serve?file=:path*',
+      },
+    ]
+  },
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     // PDF.js için worker dosyasını kopyala
     if (!isServer) {

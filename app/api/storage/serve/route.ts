@@ -10,7 +10,15 @@ export async function GET(req: NextRequest) {
     const fileParam = searchParams.get("file")
     const download = searchParams.get("download") === "true"
     
+    console.log('🔍 Storage Serve Debug:', {
+      url: req.url,
+      searchParams: Object.fromEntries(searchParams),
+      fileParam,
+      download
+    })
+    
     if (!fileParam) {
+      console.log('❌ File parameter is missing')
       return NextResponse.json({ 
         error: "File parameter is required" 
       }, { status: 400 })

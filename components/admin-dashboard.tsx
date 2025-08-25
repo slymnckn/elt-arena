@@ -110,10 +110,23 @@ export function AdminDashboard() {
   useEffect(() => {
     const fetchAdminUsers = async () => {
       try {
-        const response = await fetch('/api/admin/users')
+        const token = localStorage.getItem("admin_token")
+        if (!token) {
+          console.warn('Admin token bulunamadı')
+          return
+        }
+        
+        const response = await fetch('/api/admin/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         if (response.ok) {
           const users = await response.json()
           setAdminUsers(users)
+        } else if (response.status === 401) {
+          console.warn('Unauthorized: Admin token geçersiz')
+          localStorage.removeItem("admin_token")
         }
       } catch (error) {
         console.error('Admin users yüklenirken hata:', error)
