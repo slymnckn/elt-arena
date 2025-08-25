@@ -45,7 +45,7 @@ const nextConfig = {
     return [
       {
         source: '/uploads/:path*',
-        destination: '/api/storage/serve?file=:path*',
+        destination: '/api/uploads/:path*',
       },
     ]
   },
