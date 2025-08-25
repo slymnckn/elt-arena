@@ -1,6 +1,6 @@
 /**
  * Local File Storage Upload Client
- * Uploads files to /public/uploads/ directory via /api/storage/upload endpoint
+ * Uploads files to /public/uploads/ directory via /api/upload endpoint
  */
 export async function uploadFileViaApi(file: File, type: string = "materials"): Promise<{ url: string; path: string } | null> {
   try {
@@ -10,7 +10,7 @@ export async function uploadFileViaApi(file: File, type: string = "materials"): 
 
     console.log(`🔄 Uploading ${file.name} to local storage (${type})...`)
 
-    const response = await fetch("/api/storage/upload", {
+    const response = await fetch("/api/upload", {
       method: "POST",
       body: formData,
     })

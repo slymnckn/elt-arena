@@ -114,7 +114,7 @@ export function AdminDocuments() {
       uploadFormData.append('file', file)
       uploadFormData.append('type', 'document')
       
-      const response = await fetch('/api/storage/upload', {
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: uploadFormData,
       })
