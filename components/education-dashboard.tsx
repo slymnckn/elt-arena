@@ -948,6 +948,7 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
                               id: resource.id,
                               title: resource.title,
                               type: resource.type,
+                              category: resource.category,
                               link: resource.link,
                               fileUrl: resource.fileUrl,
                               previewLink: resource.previewLink,
@@ -955,12 +956,18 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
                             })
                             
                             if (previewUrl) {
-                              // Tüm linkler için ResourceViewer kullan (iframe önizleme)
-                              console.log('✅ ResourceViewer açılıyor - tüm linkler için iframe önizleme')
-                              setSelectedResource(resource)
+                              // Baamboozle oyunları için özel davranış - yeni sekmede aç
+                              if (resource.type === "game" && resource.category === "Baamboozle") {
+                                console.log('🎮 Baamboozle oyunu tespit edildi - yeni sekmede açılıyor')
+                                window.open(previewUrl, '_blank')
+                              } else {
+                                // Diğer tüm oyunlar ve materyaller için ResourceViewer kullan (iframe önizleme)
+                                console.log('✅ ResourceViewer açılıyor - iframe önizleme')
+                                setSelectedResource(resource)
+                              }
                             } else {
                               console.log('❌ Hiçbir önizleme linki bulunamadı!')
-                              const debugInfo = `DEBUG INFO:\nID: ${resource.id}\nTitle: ${resource.title}\nType: ${resource.type}\nLink: ${resource.link || 'BOŞ'}\nFileUrl: ${resource.fileUrl || 'BOŞ'}\nPreviewLink: ${resource.previewLink || 'BOŞ'}\nDownloadLink: ${resource.downloadLink || 'BOŞ'}`
+                              const debugInfo = `DEBUG INFO:\nID: ${resource.id}\nTitle: ${resource.title}\nType: ${resource.type}\nCategory: ${resource.category || 'BOŞ'}\nLink: ${resource.link || 'BOŞ'}\nFileUrl: ${resource.fileUrl || 'BOŞ'}\nPreviewLink: ${resource.previewLink || 'BOŞ'}\nDownloadLink: ${resource.downloadLink || 'BOŞ'}`
                               alert(`Bu kaynak için önizleme linki bulunmuyor.\n\n${debugInfo}`)
                             }
                           }} 
