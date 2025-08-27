@@ -23,6 +23,7 @@ import {
   RefreshCw,
   ChevronDown,
   ChevronRight,
+  Eye,
 } from "lucide-react"
 
 const categoryIcons = {
@@ -80,7 +81,11 @@ const gameCategoryIcons = {
 }
 
 // Özel kategori görüntüleme bileşenleri
-function DocumentsView() {
+interface DocumentsViewProps {
+  onPreview: (resource: any) => void
+}
+
+function DocumentsView({ onPreview }: DocumentsViewProps) {
   const [documents, setDocuments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
@@ -202,27 +207,56 @@ function DocumentsView() {
               )}
               <div className="flex justify-between items-center">
                 <Badge variant="secondary">{doc.document_type || selectedCategoryData?.name}</Badge>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    let link = resolveFileUrl(doc.file_url)
-                    if (!link) {
-                      alert('Bu evrak için dosya linki bulunmuyor.')
-                      return
-                    }
-                    
-                    try {
-                      new URL(link)
-                      window.open(link, '_blank')
-                    } catch (error) {
-                      console.error('Geçersiz URL:', link, error)
-                      alert('Geçersiz dosya linki. Lütfen yönetici ile iletişime geçin.')
-                    }
-                  }}
-                  disabled={!doc.file_url}
-                >
-                  İndir
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Önizleme için evrakı göster
+                      const fileUrl = doc.source_type === 'link' ? doc.external_url : doc.file_url
+                      
+                      if (!fileUrl) {
+                        alert('Bu evrak için dosya linki bulunmuyor.')
+                        return
+                      }
+
+                      // Resource formatında evrak oluştur ve ana bileşene gönder
+                      onPreview({
+                        id: doc.id,
+                        title: doc.title,
+                        previewLink: fileUrl,
+                        link: fileUrl,
+                        fileUrl: fileUrl,
+                        type: 'file'
+                      })
+                    }}
+                    disabled={!doc.file_url && !doc.external_url}
+                    title="Önizle - Evrakı büyük ekranda görüntüle"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      let link = resolveFileUrl(doc.file_url)
+                      if (!link) {
+                        alert('Bu evrak için dosya linki bulunmuyor.')
+                        return
+                      }
+                      
+                      try {
+                        new URL(link)
+                        window.open(link, '_blank')
+                      } catch (error) {
+                        console.error('Geçersiz URL:', link, error)
+                        alert('Geçersiz dosya linki. Lütfen yönetici ile iletişime geçin.')
+                      }
+                    }}
+                    disabled={!doc.file_url}
+                  >
+                    İndir
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1060,7 +1094,7 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
           /* Özel kategoriler ve ünite görünümü */
           <div className="space-y-8">
             {selectedGrade.id === "evraklar" ? (
-              <DocumentsView />
+              <DocumentsView onPreview={setSelectedResource} />
             ) : selectedGrade.id === "elt-ekibi" ? (
               <TeamMembersView />
             ) : selectedGrade.id === "bize-ulasin" ? (

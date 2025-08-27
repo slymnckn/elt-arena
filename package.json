@@ -12,6 +12,13 @@
     "production": "NODE_ENV=production npm run build && npm run start",
     "db:migrate": "psql $DATABASE_URL -f scripts/database-schema-utf8.sql",
     "db:seed": "psql $DATABASE_URL -f scripts/seed-data.sql",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up --build",
+    "docker:dev:watch": "docker-compose -f docker-compose.dev.yml up --build --watch",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:dev:logs": "docker-compose -f docker-compose.dev.yml logs -f app",
+    "docker:dev:clean": "docker-compose -f docker-compose.dev.yml down -v --rmi all",
+    "docker:db:only": "docker-compose -f docker-compose.dev.yml up db",
+    "docker:pgadmin": "docker-compose -f docker-compose.dev.yml --profile tools up pgadmin",
     "postinstall": "mkdir -p public 2>nul || echo. && copy node_modules\\pdfjs-dist\\build\\pdf.worker.min.mjs public\\pdf.worker.min.js >nul 2>&1 || echo PDF worker copied"
   },
   "dependencies": {
@@ -92,5 +99,6 @@
     "overrides": {
       "pdfjs-dist": "5.4.54"
     }
-  }
+  },
+  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b"
 }

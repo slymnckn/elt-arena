@@ -42,8 +42,10 @@ const CustomSelectContent = React.forwardRef<
   </SelectPrimitive.Content>
 ))
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Edit, Plus, Download, FileText, ArrowLeft } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Trash2, Edit, Plus, Download, FileText, ArrowLeft, ExternalLink, Globe, Eye } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { UniversalFilePreview } from "@/components/universal-file-preview"
 
 interface Document {
   id: number
@@ -54,6 +56,8 @@ interface Document {
   file_size: number | null
   document_type: string
   order_index: number
+  source_type: 'file' | 'link'
+  external_url: string | null
   created_at: string
   updated_at: string
 }
@@ -74,15 +78,22 @@ export function AdminDocuments() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingDocument, setEditingDocument] = useState<Document | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'file' | 'link'>('file')
+  const [previewResource, setPreviewResource] = useState<any | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     document_type: '',
     file_url: '',
     file_name: '',
-    file_size: 0
+    file_size: 0,
+    source_type: 'file' as 'file' | 'link',
+    external_url: ''
   })
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [linkPreview, setLinkPreview] = useState<any | null>(null)
+  const [linkPreviewLoading, setLinkPreviewLoading] = useState(false)
 
   const fetchDocuments = async () => {
     try {
@@ -106,6 +117,75 @@ export function AdminDocuments() {
   useEffect(() => {
     fetchDocuments()
   }, [])
+
+  // Link preview fonksiyonu
+  const handleLinkPreview = async (url: string) => {
+    if (!url) {
+      setLinkPreview(null)
+      return
+    }
+
+    setLinkPreviewLoading(true)
+    try {
+      const response = await fetch('/api/admin/documents/preview-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setLinkPreview(data)
+        
+        // Otomatik başlık önerisi
+        if (!formData.title && data.suggestedTitle) {
+          setFormData({
+            ...formData,
+            title: data.suggestedTitle,
+            source_type: 'link',
+            external_url: data.url,
+            file_url: data.embedUrl || data.url,
+            file_name: 'External Link',
+            file_size: 0
+          })
+        }
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: "Hata",
+          description: errorData.error || "Link önizleme sırasında hata oluştu",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Link preview error:', error)
+      toast({
+        title: "Hata",
+        description: "Link önizleme sırasında hata oluştu",
+        variant: "destructive"
+      })
+    } finally {
+      setLinkPreviewLoading(false)
+    }
+  }
+
+  // URL değişikliği handler'ı
+  const handleUrlChange = (url: string) => {
+    setLinkUrl(url)
+    
+    // Debounced preview
+    if (url) {
+      const timeoutId = setTimeout(() => {
+        handleLinkPreview(url)
+      }, 500)
+      
+      return () => clearTimeout(timeoutId)
+    } else {
+      setLinkPreview(null)
+    }
+  }
 
   const handleFileUpload = async (file: File) => {
     setUploadingFile(true)
@@ -149,15 +229,38 @@ export function AdminDocuments() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      // Form data'yı source type'a göre hazırla
+      const submitData = {
+        ...formData,
+        source_type: activeTab,
+      }
+
+      if (activeTab === 'link') {
+        if (!linkPreview?.isValid) {
+          throw new Error('Geçerli bir link URL\'si giriniz')
+        }
+        submitData.external_url = linkPreview.url || linkUrl
+        submitData.file_url = linkPreview.url || linkUrl // API bunu kullanacak
+        submitData.file_name = linkPreview.suggestedTitle || 'External Link'
+        submitData.file_size = 0
+      } else if (activeTab === 'file') {
+        if (!formData.file_url) {
+          throw new Error('Lütfen bir dosya yükleyiniz')
+        }
+      }
+
       const url = editingDocument ? `/api/admin/documents/${editingDocument.id}` : '/api/admin/documents'
       const method = editingDocument ? 'PUT' : 'POST'
+      
+      console.log('Submitting document with data:', submitData)
+      console.log('API URL:', url, 'Method:', method)
       
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       })
 
       if (response.ok) {
@@ -169,13 +272,15 @@ export function AdminDocuments() {
         setDialogOpen(false)
         resetForm()
       } else {
-        throw new Error('İşlem başarısız')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('API Error Response:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving document:', error)
       toast({
         title: "Hata",
-        description: "İşlem sırasında bir hata oluştu",
+        description: error.message || "Evrak eklenirken hata oluştu",
         variant: "destructive"
       })
     }
@@ -210,26 +315,43 @@ export function AdminDocuments() {
 
   const openEditDialog = (document: Document) => {
     setEditingDocument(document)
+    setActiveTab(document.source_type || 'file')
+    
+    if (document.source_type === 'link') {
+      setLinkUrl(document.external_url || '')
+      if (document.external_url) {
+        handleLinkPreview(document.external_url)
+      }
+    }
+    
     setFormData({
       title: document.title,
       description: document.description || '',
       document_type: document.document_type,
       file_url: document.file_url,
       file_name: document.file_name,
-      file_size: document.file_size || 0
+      file_size: document.file_size || 0,
+      source_type: document.source_type || 'file',
+      external_url: document.external_url || ''
     })
     setDialogOpen(true)
   }
 
   const resetForm = () => {
     setEditingDocument(null)
+    setActiveTab('file')
+    setLinkUrl('')
+    setLinkPreview(null)
+    setPreviewResource(null)
     setFormData({
       title: '',
       description: '',
       document_type: '',
       file_url: '',
       file_name: '',
-      file_size: 0
+      file_size: 0,
+      source_type: 'file',
+      external_url: ''
     })
   }
 
@@ -238,6 +360,29 @@ export function AdminDocuments() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+  }
+
+  const getDocumentIcon = (document: Document) => {
+    if (document.source_type === 'link') {
+      // Link türüne göre özel iconlar
+      const url = document.external_url || document.file_url || ''
+      if (url.includes('drive.google.com')) return <Globe className="h-5 w-5 text-blue-600" />
+      if (url.includes('docs.google.com/document')) return <FileText className="h-5 w-5 text-blue-500" />
+      if (url.includes('docs.google.com/spreadsheets')) return <FileText className="h-5 w-5 text-green-500" />
+      if (url.includes('docs.google.com/presentation')) return <FileText className="h-5 w-5 text-orange-500" />
+      if (url.includes('youtube.com') || url.includes('youtu.be')) return <Globe className="h-5 w-5 text-red-500" />
+      if (url.includes('onedrive.live.com') || url.includes('sharepoint.com')) return <Globe className="h-5 w-5 text-blue-700" />
+      return <ExternalLink className="h-5 w-5 text-purple-600" />
+    }
+    // Dosya için varsayılan icon
+    return <FileText className="h-5 w-5 text-gray-600" />
+  }
+
+  const getDocumentUrl = (document: Document) => {
+    if (document.source_type === 'link') {
+      return document.external_url || document.file_url
+    }
+    return document.file_url
   }
 
   const getCategoryColor = (categoryValue: string) => {
@@ -269,7 +414,7 @@ export function AdminDocuments() {
             </Button>
           </DialogTrigger>
           <DialogContent 
-            className="sm:max-w-[600px]"
+            className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
             onPointerDownOutside={(e) => {
               const target = e.target as Element
               if (target.closest('[data-radix-select-content]')) {
@@ -282,80 +427,188 @@ export function AdminDocuments() {
                 {editingDocument ? 'Evrakı Düzenle' : 'Yeni Evrak Ekle'}
               </DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Başlık</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Örn: Gizlilik Politikası"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Açıklama</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Evrak hakkında kısa açıklama..."
-                  rows={2}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Evrak Türü</label>
-                <Select 
-                  value={formData.document_type} 
-                  onValueChange={(value) => setFormData({ ...formData, document_type: value })} 
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Evrak türünü seçin" />
-                  </SelectTrigger>
-                  <CustomSelectContent className="bg-white border shadow-2xl min-w-[200px] max-h-60 overflow-auto">
-                    {documentTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.icon} {type.label}
-                      </SelectItem>
-                    ))}
-                  </CustomSelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Dosya</label>
-                <div className="space-y-2">
-                  <Input
-                    type="file"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        handleFileUpload(file)
-                      }
-                    }}
-                    disabled={uploadingFile}
-                  />
-                  {uploadingFile && <p className="text-sm text-blue-600">Dosya yükleniyor...</p>}
-                  {formData.file_name && (
-                    <p className="text-sm text-green-600">
-                      ✓ {formData.file_name} {formatFileSize(formData.file_size)}
-                    </p>
-                  )}
-                  {!editingDocument && (
-                    <p className="text-xs text-gray-500">
-                      PDF, Word, Excel, PowerPoint dosyaları desteklenir
-                    </p>
-                  )}
+            
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'file' | 'link')} className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="file" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Dosya Yükle
+                  </TabsTrigger>
+                  <TabsTrigger value="link" className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4" />
+                    Link Ekle
+                  </TabsTrigger>
+                </TabsList>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Ortak alanlar */}
+                  <div>
+                    <label className="text-sm font-medium">Başlık</label>
+                    <Input
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Örn: Gizlilik Politikası"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Açıklama</label>
+                    <Textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Evrak hakkında kısa açıklama..."
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Evrak Türü</label>
+                    <Select 
+                      value={formData.document_type} 
+                      onValueChange={(value) => setFormData({ ...formData, document_type: value })} 
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Evrak türünü seçin" />
+                      </SelectTrigger>
+                      <CustomSelectContent className="bg-white border shadow-2xl min-w-[200px] max-h-60 overflow-auto">
+                        {documentTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.icon} {type.label}
+                          </SelectItem>
+                        ))}
+                      </CustomSelectContent>
+                    </Select>
+                  </div>
+
+                {/* Tab içerikleri */}
+                <TabsContent value="file">
+                  <div>
+                    <label className="text-sm font-medium">Dosya</label>
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            handleFileUpload(file)
+                          }
+                        }}
+                        disabled={uploadingFile}
+                      />
+                      {uploadingFile && <p className="text-sm text-blue-600">Dosya yükleniyor...</p>}
+                      {formData.file_name && formData.source_type === 'file' && (
+                        <p className="text-sm text-green-600">
+                          ✓ {formData.file_name} {formatFileSize(formData.file_size)}
+                        </p>
+                      )}
+                      {!editingDocument && (
+                        <p className="text-xs text-gray-500">
+                          PDF, Word, Excel, PowerPoint dosyaları desteklenir
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="link">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium">Link URL</label>
+                      <Input
+                        type="url"
+                        value={linkUrl}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        placeholder="https://docs.google.com/document/..."
+                        required
+                      />
+                      {linkPreviewLoading && <p className="text-sm text-blue-600">Link kontrol ediliyor...</p>}
+                      {linkPreview && (
+                        <div className="space-y-2">
+                          <p className="text-sm text-green-600">
+                            ✓ {linkPreview.domain} - {linkPreview.urlType}
+                          </p>
+                          {linkPreview.suggestedTitle && (
+                            <p className="text-xs text-gray-500">
+                              Önerilen başlık: {linkPreview.suggestedTitle}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        Google Drive, Google Docs, YouTube, PDF linkleri ve daha fazlası desteklenir
+                      </p>
+                    </div>
+
+                    {/* Link Önizlemesi */}
+                    {linkPreview && linkPreview.embeddable && (
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Önizleme</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setPreviewResource({
+                                title: formData.title || linkPreview.suggestedTitle,
+                                previewLink: linkPreview.embedUrl,
+                                link: linkPreview.url,
+                                fileUrl: linkPreview.url,
+                                type: 'file'
+                              })
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Tam Önizleme
+                          </Button>
+                        </div>
+                        <div className="h-48 border rounded overflow-hidden">
+                          <iframe
+                            src={linkPreview.embedUrl}
+                            className="w-full h-full"
+                            title="Link Önizlemesi"
+                            frameBorder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    İptal
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={
+                      activeTab === 'file' ? !formData.file_url : 
+                      activeTab === 'link' ? !linkPreview?.isValid : true
+                    }
+                  >
+                    {editingDocument ? 'Güncelle' : 'Ekle'}
+                  </Button>
                 </div>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  İptal
-                </Button>
-                <Button type="submit" disabled={!formData.file_url}>
-                  {editingDocument ? 'Güncelle' : 'Ekle'}
-                </Button>
-              </div>
-            </form>
+              </form>
+            </Tabs>
+            
+            {/* Tam Ekran Önizleme Modal */}
+            {previewResource && (
+              <Dialog open={!!previewResource} onOpenChange={() => setPreviewResource(null)}>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+                  <DialogHeader>
+                    <DialogTitle>Önizleme: {previewResource.title}</DialogTitle>
+                  </DialogHeader>
+                  <div className="h-[70vh]">
+                    <UniversalFilePreview 
+                      resource={previewResource} 
+                      onClose={() => setPreviewResource(null)}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -441,40 +694,76 @@ export function AdminDocuments() {
                       <div className="flex justify-between items-start">
                         <div>
                           <CardTitle className="text-lg flex items-center gap-2">
-                            <FileText className="h-5 w-5" />
+                            {getDocumentIcon(document)}
                             {document.title}
+                            {document.source_type === 'link' && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                Link
+                              </Badge>
+                            )}
                           </CardTitle>
                           <Badge variant="secondary" className="mt-1">
                             {docType?.icon} {docType?.label || document.document_type}
                           </Badge>
+                          {document.source_type === 'link' && document.external_url && (
+                            <p className="text-xs text-gray-500 mt-1 truncate">
+                              {new URL(document.external_url).hostname}
+                            </p>
+                          )}
                         </div>
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              let link = document.file_url
-                              if (!link) {
+                              setPreviewResource({
+                                title: document.title,
+                                previewLink: document.source_type === 'link' ? document.external_url : document.file_url,
+                                link: document.source_type === 'link' ? document.external_url : document.file_url,
+                                fileUrl: document.source_type === 'link' ? document.external_url : document.file_url,
+                                type: 'file'
+                              })
+                            }}
+                            title="Önizle - Evrakı büyük ekranda görüntüle"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const url = getDocumentUrl(document)
+                              if (!url) {
                                 alert('Dosya linki bulunamadı.')
                                 return
                               }
                               
-                              // URL formatını düzelt (protokol eksikse ekle)
-                              if (!link.startsWith('http://') && !link.startsWith('https://')) {
-                                link = 'https://' + link
-                              }
-                              
-                              try {
-                                new URL(link)
-                                window.open(link, '_blank')
-                              } catch (error) {
-                                console.error('Geçersiz URL:', link, error)
-                                alert('Geçersiz dosya linki. Lütfen yönetici ile iletişime geçin.')
+                              if (document.source_type === 'link') {
+                                // Link evrakları için yeni sekmede aç
+                                window.open(url, '_blank')
+                              } else {
+                                // Dosya evrakları için indir
+                                let downloadUrl = url
+                                if (!downloadUrl.startsWith('http://') && !downloadUrl.startsWith('https://')) {
+                                  downloadUrl = 'https://' + downloadUrl
+                                }
+                                
+                                try {
+                                  new URL(downloadUrl)
+                                  window.open(downloadUrl, '_blank')
+                                } catch (error) {
+                                  console.error('Geçersiz URL:', downloadUrl, error)
+                                  alert('Geçersiz dosya linki. Lütfen yönetici ile iletişime geçin.')
+                                }
                               }
                             }}
-                            title="İndir"
+                            title={document.source_type === 'link' ? "Aç" : "İndir"}
                           >
-                            <Download className="h-4 w-4" />
+                            {document.source_type === 'link' ? (
+                              <ExternalLink className="h-4 w-4" />
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             size="sm"
