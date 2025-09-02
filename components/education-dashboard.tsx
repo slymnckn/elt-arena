@@ -598,15 +598,16 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
   // Seçili ünite ve kaynak türüne göre materyalleri filtrele
   const filteredResources = useMemo(() => {
     if (!selectedUnit || !selectedResourceType) return []
-    
-    let resources = selectedUnit.resources.filter((resource) => resource.type === selectedResourceType)
-    
-    // Eğer oyun türü seçiliyse ve oyun kategorisi seçiliyse, kategoriye göre filtrele
-    if (selectedResourceType === 'game' && selectedGameCategory) {
-      resources = resources.filter((resource) => resource.category === selectedGameCategory)
+
+    // Oyunlar için başlangıçta hiçbir şey gösterme, kategori seçilene kadar boş dön
+    if (selectedResourceType === 'game') {
+      if (!selectedGameCategory) return []
+      return selectedUnit.resources.filter(
+        (resource) => resource.type === 'game' && resource.category === selectedGameCategory,
+      )
     }
-    
-    return resources
+
+    return selectedUnit.resources.filter((resource) => resource.type === selectedResourceType)
   }, [selectedUnit, selectedResourceType, selectedGameCategory])
 
   // Seçili ünitedeki kaynak türlerini grupla
@@ -866,13 +867,6 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
                   Oyun Kategorileri
                 </h3>
                 <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant={!selectedGameCategory ? "default" : "outline"}
-                    onClick={() => setSelectedGameCategory(null)}
-                    className="flex items-center gap-2"
-                  >
-                    🎯 Tüm Oyunlar
-                  </Button>
                   {gameCategories.map((category) => (
                     <Button
                       key={category}
@@ -884,6 +878,9 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
                     </Button>
                   ))}
                 </div>
+                {!selectedGameCategory && (
+                  <p className="text-sm text-slate-600 mt-3 italic">Lütfen kategori seçiniz.</p>
+                )}
                 {selectedGameCategory && (
                   <p className="text-sm text-slate-600 mt-3">
                     <strong>{selectedGameCategory}</strong> kategorisindeki oyunlar gösteriliyor
@@ -1054,7 +1051,11 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
 
             {filteredResources.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-xl text-slate-500">Bu kategoride materyal bulunmuyor.</p>
+                <p className="text-xl text-slate-500">
+                  {selectedResourceType === 'game' && !selectedGameCategory
+                    ? 'Lütfen kategori seçiniz.'
+                    : 'Bu kategoride materyal bulunmuyor.'}
+                </p>
               </div>
             )}
           </div>
