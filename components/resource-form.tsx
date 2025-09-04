@@ -118,7 +118,9 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
     "Wordwall",
     "Baamboozle",
     "Words of Wisdom",
-    "Kahoot!"
+    "Kahoot!",
+    "Wheel of Knowledge",
+    "Jeopardy"
   ]
 
   useEffect(() => {
@@ -368,6 +370,8 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
                           <SelectItem value="Baamboozle">💥 Baamboozle</SelectItem>
                           <SelectItem value="Words of Wisdom">📚 Words of Wisdom</SelectItem>
                           <SelectItem value="Kahoot!">🎮 Kahoot!</SelectItem>
+                          <SelectItem value="Wheel of Knowledge">🎡 Wheel of Knowledge</SelectItem>
+                          <SelectItem value="Jeopardy">❓ Jeopardy</SelectItem>
                         </CustomSelectContent>
                       </Select>
                     </div>
@@ -521,6 +525,8 @@ export function ResourceForm({ isOpen, onClose, onSubmit, initialData, isSubmitt
                                 <SelectItem value="Baamboozle">💥 Baamboozle</SelectItem>
                                 <SelectItem value="Words of Wisdom">📚 Words of Wisdom</SelectItem>
                                 <SelectItem value="Kahoot!">🎮 Kahoot!</SelectItem>
+                                <SelectItem value="Wheel of Knowledge">🎡 Wheel of Knowledge</SelectItem>
+                                <SelectItem value="Jeopardy">❓ Jeopardy</SelectItem>
                               </CustomSelectContent>
                             </Select>
                           </div>

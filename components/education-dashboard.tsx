@@ -68,7 +68,9 @@ const gameCategories: GameCategory[] = [
   "Wordwall",
   "Baamboozle",
   "Words of Wisdom",
-  "Kahoot!"
+  "Kahoot!",
+  "Wheel of Knowledge",
+  "Jeopardy"
 ]
 
 const gameCategoryIcons = {
@@ -77,7 +79,9 @@ const gameCategoryIcons = {
   "Wordwall": "🧱", 
   "Baamboozle": "💥",
   "Words of Wisdom": "📚",
-  "Kahoot!": "🎮"
+  "Kahoot!": "🎮",
+  "Wheel of Knowledge": "🎡",
+  "Jeopardy": "❓"
 }
 
 // Özel kategori görüntüleme bileşenleri

@@ -1,6 +1,6 @@
 export type ResourceType = "book-presentation" | "game" | "summary" | "quiz" | "video" | "worksheet" | "file" | "flashcards"
 
-export type GameCategory = "Fortune Match" | "Tower Game" | "Wordwall" | "Baamboozle" | "Words of Wisdom" | "Kahoot!"
+export type GameCategory = "Fortune Match" | "Tower Game" | "Wordwall" | "Baamboozle" | "Words of Wisdom" | "Kahoot!" | "Wheel of Knowledge" | "Jeopardy"
 
 export interface Resource {
   id: string
