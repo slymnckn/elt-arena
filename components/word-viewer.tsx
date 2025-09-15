@@ -14,7 +14,21 @@ import {
   Maximize,
   X
 } from "lucide-react"
-import { renderAsync } from 'docx-preview'
+
+// Lazy load docx-preview with fallback for older browsers
+let docxPreview: any = null
+const loadDocxPreview = async () => {
+  try {
+    if (!docxPreview) {
+      const module = await import('docx-preview')
+      docxPreview = module
+    }
+    return docxPreview
+  } catch (error) {
+    console.warn('docx-preview not available:', error)
+    return null
+  }
+}
 
 interface WordViewerProps {
   sourceUrl: string
@@ -37,6 +51,12 @@ export function WordViewer({ sourceUrl, title, onClose }: WordViewerProps) {
         setIsLoading(true)
         setError(false)
 
+        // Lazy load docx-preview
+        const docxPreviewModule = await loadDocxPreview()
+        if (!docxPreviewModule || !docxPreviewModule.renderAsync) {
+          throw new Error('Word viewer not available in this browser')
+        }
+
         // Dosyayı fetch et
         const response = await fetch(sourceUrl)
         if (!response.ok) {
@@ -49,7 +69,7 @@ export function WordViewer({ sourceUrl, title, onClose }: WordViewerProps) {
         containerRef.current.innerHTML = ''
 
         // DOCX'i render et
-        await renderAsync(new Uint8Array(arrayBuffer), containerRef.current, undefined, {
+        await docxPreviewModule.renderAsync(new Uint8Array(arrayBuffer), containerRef.current, undefined, {
           className: 'docx-preview-content',
           inWrapper: false,
           ignoreLastRenderedPageBreak: false,
