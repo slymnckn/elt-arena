@@ -171,18 +171,30 @@ export const showLegacyBrowserWarning = () => {
 export const handleChunkLoadError = () => {
   if (typeof window === 'undefined') return
   
+  let chunkErrorCount = 0
+  const maxRetries = 3
+  
   window.addEventListener('error', (event) => {
     // ChunkLoadError yakalama
     if (
       event.message?.includes('Loading chunk') ||
       event.message?.includes('ChunkLoadError') ||
-      event.filename?.includes('_next/static')
+      event.message?.includes('Loading CSS chunk') ||
+      event.filename?.includes('_next/static') ||
+      event.filename?.includes('chunks/')
     ) {
+      chunkErrorCount++
       console.error('Chunk yükleme hatası tespit edildi:', event)
       
-      // 2 saniye bekleyip sayfayı yenile
+      if (chunkErrorCount >= maxRetries) {
+        alert('Platform yükleme hatası oluştu. Sayfa yenilenecek.')
+        window.location.reload()
+        return
+      }
+      
+      // İlk hatada 2 saniye bekle, sonra sayfayı yenile
       setTimeout(() => {
-        if (confirm('Platform yüklenirken bir hata oluştu. Sayfayı yenilemek istiyor musunuz?')) {
+        if (confirm('Platform yüklenirken hata oluştu. Sayfayı yenilemek istiyor musunuz?')) {
           window.location.reload()
         }
       }, 2000)
@@ -191,11 +203,43 @@ export const handleChunkLoadError = () => {
   
   // Promise rejection hatalarını da yakala
   window.addEventListener('unhandledrejection', (event) => {
-    if (event.reason?.toString().includes('Loading chunk')) {
+    const reason = event.reason?.toString() || ''
+    if (reason.includes('Loading chunk') || reason.includes('ChunkLoadError')) {
       console.error('Chunk promise hatası:', event.reason)
+      chunkErrorCount++
+      
+      if (chunkErrorCount >= maxRetries) {
+        alert('Yükleme hatası tekrarlandı. Sayfa yenilenecek.')
+        window.location.reload()
+        return
+      }
+      
       event.preventDefault() // Hatayı suppress et
     }
   })
+  
+  // Loading timeout için window focus kontrolü
+  let focusTimeout: NodeJS.Timeout
+  const resetFocusTimeout = () => {
+    clearTimeout(focusTimeout)
+    focusTimeout = setTimeout(() => {
+      if (document.readyState !== 'complete') {
+        console.warn('Sayfa yükleme 30 saniyede tamamlanmadı')
+        if (confirm('Platform yükleme süresi uzuyor. Yenilemek istiyor musunuz?')) {
+          window.location.reload()
+        }
+      }
+    }, 30000)
+  }
+  
+  window.addEventListener('focus', resetFocusTimeout)
+  window.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      resetFocusTimeout()
+    }
+  })
+  
+  resetFocusTimeout()
 }
 
 /**
@@ -210,6 +254,50 @@ export const initBrowserCompatibility = () => {
   // Chunk hatalarını yakalama
   handleChunkLoadError()
   
+  // Loading state monitoring
+  const monitorLoadingState = () => {
+    let loadingTimeout: NodeJS.Timeout
+    
+    const checkLoadingState = () => {
+      if (document.readyState === 'complete') {
+        clearTimeout(loadingTimeout)
+        return
+      }
+      
+      // 20 saniye sonra loading uyarısı göster
+      loadingTimeout = setTimeout(() => {
+        if (document.readyState !== 'complete') {
+          console.warn('Platform yükleme süresi normalden uzun')
+          
+          // Loading elementi varsa güncelleyelim
+          const loadingElement = document.querySelector('[data-loading="true"]')
+          if (loadingElement) {
+            loadingElement.innerHTML = `
+              <div style="text-align: center; padding: 20px;">
+                <div style="margin-bottom: 15px;">
+                  <div style="border: 2px solid #f3f3f3; border-top: 2px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                </div>
+                <h3 style="color: #333; margin-bottom: 10px;">Platform yükleniyor...</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Yükleme normalden uzun sürüyor. Eski tarayıcılarda bu durum yaşanabilir.</p>
+                <button onclick="window.location.reload()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                  Sayfayı Yenile
+                </button>
+              </div>
+            `
+          }
+        }
+      }, 20000)
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkLoadingState)
+    } else {
+      checkLoadingState()
+    }
+  }
+  
+  monitorLoadingState()
+  
   // Console'a debug bilgisi
   const browserInfo = getBrowserInfo()
   const features = checkModernFeatureSupport()
@@ -217,6 +305,7 @@ export const initBrowserCompatibility = () => {
   console.log('ELT Arena - Tarayıcı Uyumluluk Raporu:', {
     browser: browserInfo,
     features: features,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    readyState: document.readyState
   })
 }

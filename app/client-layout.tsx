@@ -24,18 +24,29 @@ export default function ClientLayout({
 }>) {
   const pathname = usePathname()
   const [isClient, setIsClient] = React.useState(false)
+  const [loadingTimeout, setLoadingTimeout] = React.useState(false)
 
-  // ChunkLoadError recovery - sadece client-side
+  // ChunkLoadError recovery ve loading timeout - sadece client-side
   React.useEffect(() => {
+    // Loading timeout için 15 saniye bekle
+    const timeoutId = setTimeout(() => {
+      if (!isClient) {
+        console.warn('Loading timeout detected after 15 seconds')
+        setLoadingTimeout(true)
+      }
+    }, 15000)
+    
     setIsClient(true)
+    clearTimeout(timeoutId)
     
     if (typeof window !== "undefined") {
       const reloadOnChunkError = (err: any) => {
         const name = err?.reason?.name || err?.error?.name || err?.name || ""
         const msg = err?.reason?.message || err?.message || ""
-        if (name.includes("ChunkLoadError") || msg.includes("ChunkLoadError")) {
+        if (name.includes("ChunkLoadError") || msg.includes("ChunkLoadError") || 
+            msg.includes("Loading chunk") || name.includes("Loading CSS chunk")) {
           console.log("ChunkLoadError detected, reloading page...")
-          location.reload()
+          setTimeout(() => location.reload(), 1000)
         }
       }
       
@@ -51,6 +62,42 @@ export default function ClientLayout({
 
   // Admin paneli yollarını kontrol et - sadece client-side render edildikten sonra
   const isAdminRoute = isClient ? pathname.startsWith("/admin") : false
+
+  // Loading timeout fallback UI
+  if (loadingTimeout && !isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg text-center">
+          <div className="mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Platform yükleniyor...
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Yükleme normalden uzun sürüyor. Bu eski tarayıcı sürümlerinde olabilir.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Sayfayı Yenile
+            </button>
+            <button
+              onClick={() => {
+                setLoadingTimeout(false)
+                setIsClient(true)
+              }}
+              className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            >
+              Yine de Devam Et
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
