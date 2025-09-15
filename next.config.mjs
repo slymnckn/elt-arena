@@ -53,6 +53,24 @@ const nextConfig = {
     // PDF.js için worker dosyasını kopyala
     if (!isServer) {
       config.resolve.alias.canvas = false;
+      
+      // ES5 uyumluluğu için
+      config.target = ['web', 'es5'];
+      
+      // Chunk boyutlarını küçült (akıllı tahta performansı için)
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        minSize: 20000,
+        maxSize: 100000,
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            maxSize: 80000
+          }
+        }
+      };
     }
     
     return config;

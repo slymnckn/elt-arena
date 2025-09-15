@@ -1,5 +1,9 @@
 "use client"
 
+// Polyfill entry point for older browsers (Chrome 79+)
+import 'core-js/stable'
+import 'regenerator-runtime/runtime'
+
 import React from "react"
 import "./globals.css"
 // PDF text & annotation layer stilleri

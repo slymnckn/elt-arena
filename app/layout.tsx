@@ -7,6 +7,14 @@ export const metadata: Metadata = {
 }
 
 import ClientLayout from "./client-layout"
+import ErrorBoundary from "@/components/error-boundary"
+
+// Browser uyumluluk kontrolleri için
+if (typeof window !== 'undefined') {
+  import('@/lib/browser-utils').then(({ initBrowserCompatibility }) => {
+    initBrowserCompatibility()
+  })
+}
 
 export default function RootLayout({
   children,
@@ -23,7 +31,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#0ea5e9" />
       </head>
       <body className="min-h-screen" suppressHydrationWarning>
-        <ClientLayout>{children}</ClientLayout>
+        <ErrorBoundary>
+          <ClientLayout>{children}</ClientLayout>
+        </ErrorBoundary>
       </body>
     </html>
   )
