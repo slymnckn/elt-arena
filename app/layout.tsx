@@ -9,12 +9,7 @@ export const metadata: Metadata = {
 import ClientLayout from "./client-layout"
 import ErrorBoundary from "@/components/error-boundary"
 
-// Browser uyumluluk kontrolleri için
-if (typeof window !== 'undefined') {
-  import('@/lib/browser-utils').then(({ initBrowserCompatibility }) => {
-    initBrowserCompatibility()
-  })
-}
+// Browser uyumluluk kontrolleri kaldırıldı - client-side'da yönetiliyor
 
 export default function RootLayout({
   children,

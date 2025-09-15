@@ -451,6 +451,19 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
   // Açık kategorileri takip etmek için state - İlk kategoriyi default olarak aç
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set())
 
+  // Signal dashboard is ready for RouteLoadingMonitor
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      // Set data attribute to signal the dashboard is ready
+      const dashboardElement = document.querySelector('[data-dashboard]')
+      if (dashboardElement) {
+        dashboardElement.setAttribute('data-dashboard-ready', 'true')
+      }
+    }, 1000) // Small delay to ensure content is rendered
+
+    return () => clearTimeout(timeoutId)
+  }, [loading])
+
   // Helper functions for smart download logic
   const isDownloadableFile = (url: string): boolean => {
     if (!url) return false
@@ -743,7 +756,7 @@ export function EducationDashboard({ initialGrade }: EducationDashboardProps) {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen w-full font-sans">
+    <div className="flex flex-col md:flex-row min-h-screen w-full font-sans" data-dashboard="true">
       <aside className="w-full md:w-64 bg-white border-r border-slate-200 p-4 flex-shrink-0 overflow-y-auto flex flex-col">
         <div className="flex-grow">
           <div className="flex items-center gap-2 mb-2">
